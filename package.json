@@ -2,8 +2,10 @@
   "name": "rest-api-sql-v3",
   "version": "0.0.0",
   "private": true,
+  "main": "./bin/www",
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "nodemon",
+    "seed": "cross-env DB_ENABLE_LOGGING=true node './seed'"
   },
   "dependencies": {
     "basic-auth": "^2.0.1",
