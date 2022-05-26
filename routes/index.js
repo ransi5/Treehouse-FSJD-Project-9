@@ -7,7 +7,9 @@ var authenticate = require('../middleware/auth-user');
 
 // get 'index' route left unchanged excpet for title
 router.get('/', function(req, res, next) {
-  res.render("index", { title: 'Express REST API' })
+  res.json({
+    message: 'Welcome to the REST API project!',
+  });
 });
 
 // get `/api/users` gets all users in database post authentication
@@ -109,8 +111,6 @@ router.post('/api/courses', authenticate.authenticateUser, async (req, res, next
         userId: req.body.User
       });
         res.status('201').location('/api/courses/' + insert.id).end();
-
-
   } catch (e) {                                                             //1
     if (e.name == 'SequelizeValidationError') {
       res.status('400').json(e.errors);
