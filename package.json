@@ -1,24 +1,22 @@
 {
-  "name": "techdegree-fullstackjs-rest-api",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "name": "rest-api-sql-v3",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "start": "nodemon ./app.js",
-    "seed": "cross-env DB_ENABLE_LOGGING=true node './seed'"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "nodemon": "^1.18.3"
+    "start": "node ./bin/www"
   },
   "dependencies": {
+    "basic-auth": "^2.0.1",
+    "bcrypt": "^5.0.1",
     "bcryptjs": "^2.4.3",
-    "cross-env": "^7.0.2",
-    "express": "^4.17.1",
-    "morgan": "^1.10.0",
-    "promise.prototype.finally": "^3.1.2",
-    "sqlite3": "^5.0.0"
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "nodemon": "^2.0.16",
+    "pug": "^3.0.2",
+    "sequelize": "^6.20.0",
+    "sqlite3": "^5.0.8"
   }
 }
