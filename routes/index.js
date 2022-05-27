@@ -15,7 +15,7 @@ router.get('/', function(req, res, next) {
 // get `/api/users` gets all users in database post authentication
 router.get('/api/users', authenticate.authenticateUser, async (req, res, next) => {
   try {
-    let users = await models.Users.findAll({attributes: {exclude: ['password', 'createdAt', 'updatedAt']}});
+    let users = await models.Users.findByPk(req.currUser.id, {attributes: {exclude: ['password', 'createdAt', 'updatedAt']}});
     if (users) {
       res.status('200').json({ users });
     } else {
@@ -46,10 +46,12 @@ router.post('/api/users', async (req, res, next) => {
     });
     res.status('201').location('/').end();
   } catch (e) {
-    if (e.name == 'SequelizeValidationError') {       //2
+    if (e.name == 'SequelizeUniqueConstraintError') {     //2
+      res.status('400').json({message: 'Email is already registered. Please enter a new Email', e});
+    } else if (e.name == 'SequelizeValidationError') {
       res.status('400').json(e.errors);
-    } else{
-      res.status('500').json({message: 'Unable to complete request', e});
+    } else {
+      res.status('400').json({message: `Unable to complete request: ${e.message}`, e});
     }
   }
 });
@@ -71,7 +73,7 @@ router.get('/api/courses', async (req, res, next) => {
       res.status('404').json({message: 'No courses found'});
     }
   } catch (e) {
-    res.status('500').json({message: 'Servor Error: unable to complete request', e});
+    res.status('500').json({message: `Unable to complete request: ${e.message}`, e});
   }
 });
 
@@ -101,8 +103,6 @@ post `/api/courses/` request to post new course in `Courses` model
 */
 router.post('/api/courses', authenticate.authenticateUser, async (req, res, next) => {
   try {
-
-
       let insert = await models.Courses.create({
         title: req.body.title,
         description: req.body.description,
@@ -114,8 +114,10 @@ router.post('/api/courses', authenticate.authenticateUser, async (req, res, next
   } catch (e) {                                                             //1
     if (e.name == 'SequelizeValidationError') {
       res.status('400').json(e.errors);
-    } else{
-      res.status('500').json({message: 'Unable to complete request', e});
+    } else if (e.name == 'SequelizeForeignKeyConstraintError') {
+      res.status('400').json({message: 'Please enter a valid User', e});
+    } else {
+      res.status('500').json({message: `Unable to complete request: ${e.message}`, e});
     }
   }
 });

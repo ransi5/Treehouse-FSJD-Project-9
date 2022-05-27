@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       validate: {
         notEmpty: {
@@ -47,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         validate: {
           notEmpty: {
-            msg: 'Please provide a course "user id"',
+            msg: 'Please provide a "user id"',
           },
         },
       },
