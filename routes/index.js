@@ -25,7 +25,7 @@ router.get('/api/users', authenticate.authenticateUser, async (req, res, next) =
     if (e.name == 'SequelizeUniqueConstraintError') {
       res.status('400').json({message: 'Bad request', e});
     } else {
-      res.status('500').json({message: 'Bad request', e});
+      res.status('500').json(e);
     }
   }
 });
@@ -46,12 +46,19 @@ router.post('/api/users', async (req, res, next) => {
     });
     res.status('201').location('/').end();
   } catch (e) {
+    let errors = []
     if (e.name == 'SequelizeUniqueConstraintError') {     //2
-      res.status('400').json({message: 'Email is already registered. Please enter a new Email', e});
+      e.errors.map(err => {
+        errors.push(err.message)
+      })
+      res.status('400').json(errors);
     } else if (e.name == 'SequelizeValidationError') {
-      res.status('400').json(e.errors);
+      e.errors.map(err => {
+        errors.push(err.message)
+      })
+      res.status('400').json(errors);
     } else {
-      res.status('400').json({message: `Unable to complete request: ${e.message}`, e});
+      res.status('500').json(e);
     }
   }
 });
@@ -70,10 +77,10 @@ router.get('/api/courses', async (req, res, next) => {
     if (courses) {                                //1
       res.status('200').json({ courses });
     } else {
-      res.status('404').json({message: 'No courses found'});
+      res.status('404').json({ status: 404, message: 'No courses found'});
     }
   } catch (e) {
-    res.status('500').json({message: `Unable to complete request: ${e.message}`, e});
+    res.status('500').json(e);
   }
 });
 
@@ -90,10 +97,10 @@ router.get('/api/courses/:id', async (req, res, next) => {
     if (courses) {                                            //1
       res.status('200').json({ courses });
     } else {
-      res.status('404').json({message: 'No course found'});
+      res.status('404').json({status: 404, message: 'No course found'});
     }
   } catch (e) {
-    res.status('500').json({message: 'Servor Error: unable to complete request', e});
+    res.status('500').json(e);
   }
 });
 
@@ -111,65 +118,84 @@ router.post('/api/courses', authenticate.authenticateUser, async (req, res, next
         userId: req.body.User
       });
         res.status('201').location('/api/courses/' + insert.id).end();
-  } catch (e) {                                                             //1
+  } catch (e) {
+    let errors = []                                                          //1
     if (e.name == 'SequelizeValidationError') {
-      res.status('400').json(e.errors);
+      e.errors.map(err => {
+        errors.push(err.message)
+      })
+      res.status('400').json(errors);
     } else if (e.name == 'SequelizeForeignKeyConstraintError') {
-      res.status('400').json({message: 'Please enter a valid User', e});
+      errors = [`Please enter a valid User: ${e.message}`]
+      res.status('400').json(errors);
     } else {
-      res.status('500').json({message: `Unable to complete request: ${e.message}`, e});
+      res.status('500').json(e);
     }
   }
 });
 
 /*
 put `/api/courses/:id` request to update a course with `:id` in `Courses` model
-1   conditional to display error messages if 'courses' model not owned by user
-2   condition statement to display validation error messages
+1   condition to send error message if course not found
+2   conditional to display error messages if 'courses' model not owned by user
+3   condition statement to display validation error messages
 */
 router.put('/api/courses/:id', authenticate.authenticateUser, async (req, res, next) => {
+  let errors = [];
   try {
     let courses = await models.Courses.findByPk(req.params.id);
-    if ( courses.userId == req.currUser.id ) {        //1
-      let updated = await models.Courses.update({
-        title: req.body.title,
-        description: req.body.description,
-        estimatedTime: req.body.estimatedTime,
-        materialsNeeded: req.body.materialsNeeded,
-        userId: req.body.User,
-      },
-      {
-        where: { id: req.params.id }
-      });
-      res.status('204').end();
+    if (courses) {                                            //1
+      if ( courses.userId == req.currUser.id )  {        //2
+        let updated = await models.Courses.update({
+          title: req.body.title,
+          description: req.body.description,
+          estimatedTime: req.body.estimatedTime,
+          materialsNeeded: req.body.materialsNeeded,
+          userId: req.body.User,
+        },
+        {
+          where: { id: req.params.id }
+        });
+        if (updated) {                                            //1
+          res.status('204').end();
+        } else {
+          res.status('404').json({status: 404, message: 'No course found'});
+        }
+      } else {
+        res.status('403').json({status: 403, name: "Course update denied", message: "User does not own this course"});
+      }
     } else {
-      res.status('403').json({message: "User does not own this course"});
+      res.status('404').json({status: 404, message: 'No course found'});
     }
   } catch (e) {
-    if (e.name == 'SequelizeValidationError') {                     //2
-      res.status('400').json(e.errors);
-    } else{
-      res.status('500').json({message: 'Unable to complete request', e});
+    if (e.name == 'SequelizeValidationError') {         //3
+      e.errors.map(err => {
+        errors.push(err.message)
+      })
+      res.status('400').json(errors);
+    } else {
+      res.status('500').json(e);
     }
   }
 });
 
 /*
 put `/api/courses/:id` request to delete a course with `:id` in `Courses` model
-1   conditional to display error messages if course not deleted because user does not own the course
+1   conditional to send error messages if course not deleted because user does not own the course
+2 condition sends ok response or error message if request failed
 */
 router.delete('/api/courses/:id', authenticate.authenticateUser, async (req, res, next) => {
   try {
     let courses = await models.Courses.findByPk(req.params.id);
-    if ( courses.userId == req.currUser.id ) {                        //1
+    if ( courses.userId == req.currUser.id ) {                                        //1
       let deleted = await models.Courses.destroy({ where: { id: req.params.id }});
-      if (deleted) {
+      if (deleted) {                                                                 //2
         res.status('204').end();
       } else {
         res.status('400').json({message: 'error deleting course'});
       }
     } else {
-      res.status('403').json({message: "User does not own this course"});
+      res.status('403').json({message: "Cannot delete: User does not own this course"});
     }
 
   } catch (e) {
