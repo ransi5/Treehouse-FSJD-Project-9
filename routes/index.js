@@ -115,7 +115,7 @@ router.post('/api/courses', authenticate.authenticateUser, async (req, res, next
         description: req.body.description,
         estimatedTime: req.body.estimatedTime,
         materialsNeeded: req.body.materialsNeeded,
-        userId: req.body.User
+        userId: req.body.userId
       });
         res.status('201').location('/api/courses/' + insert.id).end();
   } catch (e) {
@@ -151,7 +151,7 @@ router.put('/api/courses/:id', authenticate.authenticateUser, async (req, res, n
           description: req.body.description,
           estimatedTime: req.body.estimatedTime,
           materialsNeeded: req.body.materialsNeeded,
-          userId: req.body.User,
+          userId: req.body.userId,
         },
         {
           where: { id: req.params.id }
