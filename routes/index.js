@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var models = require('../models');
-const bcrypt = require('bcrypt');
 // authentication middleware imported
 var authenticate = require('../middleware/auth-user');
 
@@ -37,12 +36,11 @@ post `/api/users` add new user to `User` mdoel
 */
 router.post('/api/users', async (req, res, next) => {
   try {
-    const hashedPassword = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync());  //1
-    let insert = await models.Users.create({
+    let user = await models.Users.create({
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       emailAddress: req.body.emailAddress,
-      password: hashedPassword
+      password: req.body.password
     });
     res.status('201').location('/').end();
   } catch (e) {

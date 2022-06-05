@@ -1,4 +1,5 @@
 'use strict';
+const bcrypt = require('bcrypt');
 const {
   Model
 } = require('sequelize');
@@ -58,11 +59,21 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: {
           msg: 'Please provide a "Password"',
         },
+        customValidator(value) {
+          if (value.length < 8) {
+            throw new Error('password must be at least 8 characters long');
+          }
+        }
       },
     }
   }, {
     sequelize,
     modelName: 'Users',
+  });
+//  `beforeCreate` hook to hash password
+  Users.beforeCreate(async (user, options) => {
+    const hashedPassword = await bcrypt.hashSync(user.password, bcrypt.genSaltSync());
+    user.password = hashedPassword;
   });
 // `one to many` association with Courses model defined
   Users.associate = (models) => {
